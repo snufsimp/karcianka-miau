@@ -1,83 +1,88 @@
 import random
 import time
 
-znaczki = ["♣", "♦", "♥", "♠"]
-wartosci = ["11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1"]
+pula_kart = ["11", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1"]
 
 karty_gracza = []
 karty_przeciwnika = []
 
-def stworz_talie():
-    talia = [(wartosc, znaczek) for wartosc in wartosci for znaczek in znaczki]
-    random.shuffle(talia)
-    return talia
+def tasowanie_kart():
+    random.shuffle(pula_kart)
+    print("karty zostaly potasowane!")
+    return pula_kart
 
-def pobierz_karte(talia):
-    return talia.pop(0)
+def pobierz_karte():
+    return pula_kart.pop(0)
 
-def dobierz_karte_gracz(talia):
-    karta = pobierz_karte(talia)
-    karty_gracza.append(karta)
+def dobierz_karte(ziomek):
+    karta = pobierz_karte()
+    ziomek.append(karta)
 
-def dobierz_karte_przeciwnik(talia):
-    karta = pobierz_karte(talia)
-    karty_przeciwnika.append(karta)
+def obliczanie_punktow(ziomek, ukryta=False):
+    if ukryta:
+        return sum(int(karta) for karta in ziomek[1:])
+    return sum(int(karta) for karta in ziomek)
 
-def obliczanie_punktow(ziomek):
-    suma = 0
-    for karta in ziomek:
-        wartosc = karta[0]
-        suma += int(wartosc)
-    return suma
-
-def pokaz_karty(ziomek):
-    return " ".join(f"{wartosc}{znaczek}" for wartosc, znaczek in ziomek)
+def pokaz_karty(ziomek, ukryta=False):
+    if ukryta:
+        return "?, " + ", ".join(map(str, ziomek[1:])) if len(ziomek) > 1 else "?"
+    return ", ".join(map(str, ziomek))
 
 def wybor_ruchu():
     while True:
-        ruch = input("jaki ruch robisz? (hit/stay): ").lower()
-        if ruch == "hit":
-            return True
-        elif ruch == "stay":
-            return False
-        else:
-            print("cos nie tak kolezko!")
+        ruch = input("co robisz? (hit/stay): ").lower()
+        if ruch in ["hit", "stay"]:
+            return ruch == "hit"
+        print("chyba jestes autysta")
 
-def wykonaj_ruch(talia):
-    while True:
-        decyzja = wybor_ruchu()
-        if decyzja:
-            dobierz_karte_gracz(talia)
-            print(f"twoje karty: {pokaz_karty(karty_gracza)}, punkty: {obliczanie_punktow(karty_gracza)}")
-            if obliczanie_punktow(karty_gracza) > 21:
-                print("bust tak zwany")
-                return
-        else:
-            break
 
-def dzialania_przeciwnika(talia):
+def dzialania_przeciwnika():
     while obliczanie_punktow(karty_przeciwnika) < 16:
-        dobierz_karte_przeciwnik(talia)
-        print(f"przeciwnik wzial karte: {pokaz_karty(karty_przeciwnika)[1:]}, punkty: {obliczanie_punktow(karty_przeciwnika)}")
+        time.sleep(1)
+        print(f"przeciwnik wzial karte: {pokaz_karty(karty_przeciwnika, ukryta=True)}, punkty: {obliczanie_punktow(karty_przeciwnika)}")
+        time.sleep(1)
     print("koniec ruchu przeciwnika")
+
 
 def __main__():
     global karty_gracza, karty_przeciwnika
+    tasowanie_kart()
+    time.sleep(1)
 
-    talia = stworz_talie()
+    karty_gracza = [pobierz_karte(), pobierz_karte()]
+    karty_przeciwnika = [pobierz_karte(), pobierz_karte()]
 
-    karty_gracza = [pobierz_karte(talia), pobierz_karte(talia)]
-    karty_przeciwnika = [pobierz_karte(talia), pobierz_karte(talia)]
+    print(f"twoje karty: {pokaz_karty(karty_gracza)}, punkty: {obliczanie_punktow(karty_gracza)}")
+    print(f"karty przeciwnika: {pokaz_karty(karty_przeciwnika, ukryta=True)}, punkty: niewiadoma + {obliczanie_punktow(karty_przeciwnika, ukryta=True)}")
 
-    print(f"gracz posiada karte {pokaz_karty([karty_gracza[0]])} i jedną karte nieznana")
-    print(f"to twoje karty: {pokaz_karty(karty_gracza)}, punkty {obliczanie_punktow(karty_gracza)}")
-    print(f"przeciwnik posiada karte {pokaz_karty([karty_przeciwnika[0]])} i jedna karte nieznana")
+    gracz_zakonczyl = False
+    przeciwnik_zakonczyl = False
 
-    wykonaj_ruch(talia)
-    dzialania_przeciwnika(talia)
+    while not (gracz_zakonczyl and przeciwnik_zakonczyl):
 
-    print(f"to twoje karty: {pokaz_karty(karty_gracza)}, punkty: {obliczanie_punktow(karty_gracza)}")
+        if not gracz_zakonczyl:
+            if wybor_ruchu():
+                dobierz_karte(karty_gracza)
+                print(f"twoje karty: {pokaz_karty(karty_gracza)}, punkty: {obliczanie_punktow(karty_gracza)}")
+            else:
+                print("zakonczyles swoj ruch")
+                gracz_zakonczyl = True
+
+        if not przeciwnik_zakonczyl:
+            if obliczanie_punktow(karty_przeciwnika) < 16:
+                dobierz_karte(karty_przeciwnika)
+                print(
+                    f"przeciwnik dobral karte: {pokaz_karty(karty_przeciwnika, ukryta=True)}, punkty: niewiadoma + {obliczanie_punktow(karty_przeciwnika, ukryta=True)}")
+            else:
+                print(f"przeciwnik wybiera stay, punkty: niewiadoma + {obliczanie_punktow(karty_przeciwnika, ukryta=True)}")
+                przeciwnik_zakonczyl = True
+
+    print("koniec gry!!")
+    time.sleep(1)
+    print(f"twoje karty: {pokaz_karty(karty_gracza)}, punkty: {obliczanie_punktow(karty_gracza)}")
+    time.sleep(1)
     print(f"karty przeciwnika: {pokaz_karty(karty_przeciwnika)}, punkty: {obliczanie_punktow(karty_przeciwnika)}")
+    time.sleep(1)
 
     if obliczanie_punktow(karty_gracza) > 21:
         print("LLL bust")
